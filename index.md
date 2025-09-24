@@ -1,207 +1,331 @@
-import React, { useState } from 'react';
-import { Calendar, User, Tag, Package, Send, AlertCircle } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Отчет о продажах</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-const App = () => {
-  const [formData, setFormData] = useState({
-    saleDate: '',
-    manager: '',
-    segment: '',
-    product: ''
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
 
-  const managers = ['Алексей Иванов', 'Мария Петрова', 'Дмитрий Сидоров', 'Елена Козлова', 'Сергей Морозов'];
-  const segments = ['B2B', 'B2C', 'Корпоративный', 'Розница', 'Онлайн'];
-  const products = ['Продукт A', 'Продукт B', 'Продукт C', 'Услуга X', 'Услуга Y'];
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
 
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear any previous errors when user starts typing
-    if (submitError) setSubmitError('');
-  };
+        .header {
+            background: #0088cc;
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
 
-  const validateForm = () => {
-    const { saleDate, manager, segment, product } = formData;
-    if (!saleDate || !manager || !segment || !product) {
-      return 'Пожалуйста, заполните все поля';
-    }
-    if (new Date(saleDate) > new Date()) {
-      return 'Дата продажи не может быть в будущем';
-    }
-    return null;
-  };
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setSubmitError(validationError);
-      return;
-    }
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
 
-    setIsSubmitting(true);
-    setSubmitError('');
-    
-    // Simulate API call to Google Sheets
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setSubmitSuccess(true);
-      // Reset form after successful submission
-      setFormData({
-        saleDate: '',
-        manager: '',
-        segment: '',
-        product: ''
-      });
-      // Hide success message after 3 seconds
-      setTimeout(() => setSubmitSuccess(false), 3000);
-    } catch (error) {
-      setSubmitError('Ошибка при отправке данных. Попробуйте позже.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        .form {
+            padding: 30px;
+        }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Telegram-like header */}
-        <div className="bg-blue-500 text-white rounded-t-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-              <Package className="text-blue-500 w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg">Отчет о продажах</h1>
-              <p className="text-blue-100 text-sm">Сбор данных для анализа</p>
-            </div>
-          </div>
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .form-group label svg {
+            width: 20px;
+            height: 20px;
+            color: #0088cc;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #0088cc;
+            box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
+        }
+
+        .form-control option {
+            font-size: 16px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            background: #0088cc;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            background: #0077b6;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid white;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Telegram-specific styling */
+        @media (max-width: 500px) {
+            .container {
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            body {
+                padding: 0;
+                background: white;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Отчет о продажах</h1>
+            <p>Заполните данные для анализа</p>
         </div>
-
-        {/* Form container */}
-        <div className="bg-white rounded-b-2xl shadow-xl overflow-hidden">
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Sale Date */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-gray-700 font-medium">
-                <Calendar className="w-4 h-4 text-blue-500" />
-                <span>Дата продажи</span>
-              </label>
-              <input
-                type="date"
-                value={formData.saleDate}
-                onChange={(e) => handleInputChange('saleDate', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                max={new Date().toISOString().split('T')[0]}
-              />
+        
+        <form class="form" id="reportForm">
+            <div class="form-group">
+                <label>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Дата продажи
+                </label>
+                <input type="date" id="saleDate" class="form-control" required>
             </div>
-
-            {/* Manager */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-gray-700 font-medium">
-                <User className="w-4 h-4 text-blue-500" />
-                <span>Менеджер</span>
-              </label>
-              <select
-                value={formData.manager}
-                onChange={(e) => handleInputChange('manager', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
-              >
-                <option value="">Выберите менеджера</option>
-                {managers.map((manager, index) => (
-                  <option key={index} value={manager}>{manager}</option>
-                ))}
-              </select>
+            
+            <div class="form-group">
+                <label>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Менеджер
+                </label>
+                <select id="manager" class="form-control" required>
+                    <option value="">Выберите менеджера</option>
+                    <option value="Алексей Иванов">Алексей Иванов</option>
+                    <option value="Мария Петрова">Мария Петрова</option>
+                    <option value="Дмитрий Сидоров">Дмитрий Сидоров</option>
+                    <option value="Елена Козлова">Елена Козлова</option>
+                    <option value="Сергей Морозов">Сергей Морозов</option>
+                </select>
             </div>
-
-            {/* Segment */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-gray-700 font-medium">
-                <Tag className="w-4 h-4 text-blue-500" />
-                <span>Сегмент</span>
-              </label>
-              <select
-                value={formData.segment}
-                onChange={(e) => handleInputChange('segment', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
-              >
-                <option value="">Выберите сегмент</option>
-                {segments.map((segment, index) => (
-                  <option key={index} value={segment}>{segment}</option>
-                ))}
-              </select>
+            
+            <div class="form-group">
+                <label>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                    </svg>
+                    Сегмент
+                </label>
+                <select id="segment" class="form-control" required>
+                    <option value="">Выберите сегмент</option>
+                    <option value="B2B">B2B</option>
+                    <option value="B2C">B2C</option>
+                    <option value="Корпоративный">Корпоративный</option>
+                    <option value="Розница">Розница</option>
+                    <option value="Онлайн">Онлайн</option>
+                </select>
             </div>
-
-            {/* Product */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 text-gray-700 font-medium">
-                <Package className="w-4 h-4 text-blue-500" />
-                <span>Товар/Услуга</span>
-              </label>
-              <select
-                value={formData.product}
-                onChange={(e) => handleInputChange('product', e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-white"
-              >
-                <option value="">Выберите товар/услугу</option>
-                {products.map((product, index) => (
-                  <option key={index} value={product}>{product}</option>
-                ))}
-              </select>
+            
+            <div class="form-group">
+                <label>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Товар/Услуга
+                </label>
+                <select id="product" class="form-control" required>
+                    <option value="">Выберите товар/услугу</option>
+                    <option value="Продукт A">Продукт A</option>
+                    <option value="Продукт B">Продукт B</option>
+                    <option value="Продукт C">Продукт C</option>
+                    <option value="Услуга X">Услуга X</option>
+                    <option value="Услуга Y">Услуга Y</option>
+                </select>
             </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Отправка...</span>
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  <span>Отправить отчет</span>
-                </>
-              )}
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                <span>Отправить отчет</span>
             </button>
-
-            {/* Error Message */}
-            {submitError && (
-              <div className="flex items-center space-x-2 p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{submitError}</span>
-              </div>
-            )}
-
-            {/* Success Message */}
-            {submitSuccess && (
-              <div className="flex items-center space-x-2 p-3 bg-green-50 text-green-700 rounded-lg border border-green-200">
-                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span className="text-sm">Отчет успешно отправлен в Google Таблицу!</span>
-              </div>
-            )}
-          </form>
-
-          {/* Footer note */}
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-            <p className="text-xs text-gray-500 text-center">
-              Данные будут автоматически добавлены в Google Таблицу для дальнейшего анализа
-            </p>
-          </div>
-        </div>
-      </div>
+            
+            <div id="message" class="message hidden"></div>
+        </form>
     </div>
-  );
-};
 
-export default App;
+    <script>
+        // Telegram WebApp initialization
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.MainButton.textColor = "#FFFFFF";
+        tg.MainButton.color = "#0088cc";
+
+        // Set max date to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('saleDate').max = today;
+        document.getElementById('saleDate').value = today;
+
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            // Get form data
+            const formData = {
+                saleDate: document.getElementById('saleDate').value,
+                manager: document.getElementById('manager').value,
+                segment: document.getElementById('segment').value,
+                product: document.getElementById('product').value
+            };
+            
+            // Basic validation
+            if (!formData.saleDate || !formData.manager || !formData.segment || !formData.product) {
+                showMessage('Пожалуйста, заполните все поля', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div> Отправка...';
+            
+            try {
+                // In a real implementation, you would send this data to your backend
+                // which would then write to Google Sheets
+                // Example: await sendDataToBackend(formData);
+                
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                // Show success message
+                showMessage('✅ Отчет успешно отправлен в Google Таблицу!', 'success');
+                
+                // Close the WebApp after 2 seconds
+                setTimeout(() => {
+                    tg.close();
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('❌ Ошибка при отправке данных. Попробуйте позже.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Отправить отчет';
+            }
+        });
+        
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.classList.remove('hidden');
+            
+            // Auto-hide success message
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageDiv.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        // Handle back button press
+        tg.BackButton.show();
+        tg.BackButton.onClick(() => {
+            tg.close();
+        });
+    </script>
+</body>
+</html>
